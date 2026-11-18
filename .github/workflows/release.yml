@@ -1,0 +1,44 @@
+name: Build & Release AuraTime.exe
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pip pyinstaller
+
+      - name: Run self-test
+        run: python main.py --self-test
+
+      - name: Build AuraTime.exe
+        run: python build_exe.py
+
+      - name: Upload AuraTime.exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AuraTime-Windows-x64
+          path: dist/AuraTime.exe
+
+      - name: Publish GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/AuraTime.exe
+          generate_release_notes: true
